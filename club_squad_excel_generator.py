@@ -1,8 +1,10 @@
+
 import pandas as pd
 import streamlit as st
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image
 from openpyxl.styles import PatternFill, Alignment, Border, Side, Font
+from openpyxl.utils import get_column_letter
 import requests
 from io import BytesIO
 import tempfile
@@ -20,17 +22,30 @@ def fetch_logo(club_name):
 
 # Function to process squad data
 def process_squad(raw_text, club_name):
+    known_positions = {"GK", "CB", "LB", "RB", "DM", "CM", "RM", "LM", "AM", "LW", "RW", "SS", "CF"}
     players = []
     lines = raw_text.strip().split("\n")
     for line in lines:
-        parts = line.split("\t")
+        parts = line.split()
         if len(parts) < 2:
-            parts = line.split()
+            continue
+
         number = parts[0]
-        name = parts[1]
-        positions = parts[2:] if len(parts) > 2 else []
-        primary = positions[0] if positions else ""
-        secondary = ", ".join(positions[1:]) if len(positions) > 1 else ""
+        name_parts = []
+        position_parts = []
+
+        for part in parts[1:]:
+            if part in known_positions:
+                position_parts.append(part)
+            else:
+                if not position_parts:
+                    name_parts.append(part)
+                else:
+                    position_parts.append(part)
+
+        name = " ".join(name_parts)
+        primary = position_parts[0] if position_parts else ""
+        secondary = ", ".join(position_parts[1:]) if len(position_parts) > 1 else ""
         players.append((number, name, primary, secondary))
 
     wb = Workbook()
@@ -88,13 +103,13 @@ def process_squad(raw_text, club_name):
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    for column_cells in ws.columns:
+    for i, column_cells in enumerate(ws.columns, start=1):
         max_length = 0
-        column = column_cells[0].column_letter
+        column_letter = get_column_letter(i)
         for cell in column_cells:
             if cell.value:
                 max_length = max(max_length, len(str(cell.value)))
-        ws.column_dimensions[column].width = max_length + 2
+        ws.column_dimensions[column_letter].width = max_length + 2
 
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     for row in ws.iter_rows(min_row=2):
@@ -112,11 +127,10 @@ def process_squad(raw_text, club_name):
     wb.save(temp_file.name)
     return temp_file.name
 
+# Streamlit App
 st.title("⚽ Club Squad Excel Generator")
-
 raw_input_text = st.text_area("Paste your squad list here:", height=300)
 club = st.text_input("Enter club name (e.g., Everton FC):")
-
 if st.button("Generate Excel"):
     if raw_input_text and club:
         file_path = process_squad(raw_input_text, club)

@@ -1,3 +1,4 @@
+
 # ⚽ Club Squad Excel Generator
 
 This app lets you paste a football squad list, add a club name, and instantly create a professional Excel sheet — with positions split, color-coded, logos, and formatting!
@@ -8,4 +9,4 @@ This app lets you paste a football squad list, add a club name, and instantly cr
 3. Click "New App", connect your GitHub, select this repo and `club_squad_excel_generator.py` file.
 4. Click "Deploy" — Done!
 
-Built for fans, scouts, analysts, and club staff! 🎯
+Built for fans, scouts, clubs, and analysts! 🎯
